@@ -1,0 +1,12 @@
+{
+  "name": "netlify-fullstack-taller",
+  "version": "1.0.0",
+  "description": "Taller fullstack con frontend, backend serverless y Netlify",
+  "scripts": {
+    "dev": "netlify dev",
+    "start": "netlify dev"
+  },
+  "devDependencies": {
+    "netlify-cli": "latest"
+  }
+}
