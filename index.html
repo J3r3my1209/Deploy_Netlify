@@ -6,70 +6,24 @@
   <title>Formulario Fullstack con Netlify</title>
   <style>
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #ecfeff;
-      color: #0f172a;
-    }
-    header {
-      background: linear-gradient(135deg, #0f766e, #0891b2);
-      color: white;
-      padding: 32px 20px;
-      text-align: center;
-    }
-    main {
-      max-width: 980px;
-      margin: 30px auto;
-      padding: 0 20px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .card {
-      background: white;
-      padding: 24px;
-      border-radius: 18px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.12);
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: #ecfeff; color: #0f172a; }
+    header { background: linear-gradient(135deg, #0f766e, #0891b2); color: white; padding: 32px 20px; text-align: center; }
+    main { max-width: 980px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: white; padding: 24px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.12); }
     label { display: block; margin-top: 12px; font-weight: bold; }
-    input, textarea, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 8px;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      font-size: 1rem;
-    }
-    button {
-      background: #0f766e;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
+    input, textarea, button { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; }
+    button { background: #0f766e; color: white; border: none; cursor: pointer; font-weight: bold; }
     button:hover { background: #115e59; }
     button:disabled { background: #94a3b8; cursor: not-allowed; }
-    .estado {
-      margin-top: 14px;
-      padding: 12px;
-      border-radius: 10px;
-      display: none;
-    }
+    .estado { margin-top: 14px; padding: 12px; border-radius: 10px; display: none; }
     .ok { display:block; background:#dcfce7; color:#166534; }
     .error { display:block; background:#fee2e2; color:#991b1b; }
-    .mensaje {
-      border: 1px solid #e2e8f0;
-      padding: 14px;
-      border-radius: 12px;
-      margin: 12px 0;
-      background: #f8fafc;
-    }
+    .mensaje { border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; margin: 12px 0; background: #f8fafc; }
     .mensaje b { color: #0f766e; }
     .fecha { color:#64748b; font-size:.85rem; }
-    @media(max-width: 800px) {
-      main { grid-template-columns: 1fr; }
-    }
+    #btnLimpiar { background: #ef4444; margin-top: 10px; }
+    #btnLimpiar:hover { background: #dc2626; }
+    @media(max-width: 800px) { main { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -89,7 +43,8 @@
         <input id="email" name="email" type="email" placeholder="correo@ejemplo.com" required />
 
         <label for="mensaje">Mensaje</label>
-        <textarea id="mensaje" name="mensaje" rows="5" placeholder="Escribe un mensaje..." required></textarea>
+        <textarea id="mensaje" name="mensaje" rows="5" placeholder="Escribe al menos 10 caracteres..." required></textarea>
+        <small id="contador">Caracteres: 0</small>
 
         <button id="btnEnviar" type="submit">Enviar al backend</button>
       </form>
@@ -99,6 +54,7 @@
     <section class="card">
       <h2>Mensajes</h2>
       <button id="btnCargar">Cargar mensajes demo</button>
+      <button id="btnLimpiar">Limpiar lista</button>
       <div id="listaMensajes"></div>
     </section>
   </main>
@@ -109,9 +65,13 @@
     const listaMensajes = document.getElementById("listaMensajes");
     const btnEnviar = document.getElementById("btnEnviar");
     const btnCargar = document.getElementById("btnCargar");
+    const btnLimpiar = document.getElementById("btnLimpiar");
+    const txtMensaje = document.getElementById("mensaje");
+    const contador = document.getElementById("contador");
 
     const API_BASE = "/api";
 
+    // --- Funciones auxiliares ---
     function mostrarEstado(texto, tipo) {
       estado.textContent = texto;
       estado.className = "estado " + tipo;
@@ -128,16 +88,31 @@
       listaMensajes.prepend(div);
     }
 
+    // --- Retos: Contador y Validación ---
+    txtMensaje.addEventListener("input", () => {
+      const longitud = txtMensaje.value.length;
+      contador.textContent = `Caracteres: ${longitud}`;
+      if (longitud < 10) {
+        contador.style.color = "red";
+        btnEnviar.disabled = true;
+      } else {
+        contador.style.color = "green";
+        btnEnviar.disabled = false;
+      }
+    });
+
+    // --- Reto: Limpiar lista ---
+    btnLimpiar.addEventListener("click", () => {
+      listaMensajes.innerHTML = "";
+    });
+
+    // --- Lógica principal ---
     async function cargarMensajes() {
       listaMensajes.innerHTML = "<p>Cargando...</p>";
       try {
         const response = await fetch(`${API_BASE}/mensajes`);
         const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || "No se pudieron cargar los mensajes");
-        }
-
+        if (!response.ok) throw new Error(result.error);
         listaMensajes.innerHTML = "";
         result.data.forEach(renderMensaje);
       } catch (error) {
@@ -149,12 +124,11 @@
       event.preventDefault();
       btnEnviar.disabled = true;
       btnEnviar.textContent = "Enviando...";
-      mostrarEstado("Enviando datos al backend...", "ok");
-
+      
       const data = {
         nombre: document.getElementById("nombre").value.trim(),
         email: document.getElementById("email").value.trim(),
-        mensaje: document.getElementById("mensaje").value.trim()
+        mensaje: txtMensaje.value.trim()
       };
 
       try {
@@ -163,16 +137,13 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
         });
-
         const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || "Error al enviar");
-        }
+        if (!response.ok) throw new Error(result.error);
 
         mostrarEstado(result.message, "ok");
         renderMensaje(result.data);
         form.reset();
+        contador.textContent = "Caracteres: 0"; // Reset contador
       } catch (error) {
         mostrarEstado(error.message, "error");
       } finally {
