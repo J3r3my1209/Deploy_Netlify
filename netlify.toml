@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [build]
   publish = "."
   functions = "netlify/functions"
@@ -11,7 +10,7 @@
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
-=======
+
 [build]
   publish = "."
   functions = "netlify/functions"
@@ -24,5 +23,4 @@
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
->>>>>>> 47cf33c (first commit)
   status = 200
