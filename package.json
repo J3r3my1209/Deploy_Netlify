@@ -7,6 +7,9 @@
     "start": "netlify dev"
   },
   "devDependencies": {
-    "netlify-cli": "latest"
+    "netlify-cli": "^26.1.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.1"
   }
 }
