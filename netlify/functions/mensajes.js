@@ -10,20 +10,23 @@ exports.handler = async function(event, context) {
     return { statusCode: 200, body: JSON.stringify({ ok: true, data }) };
   }
 
-  if (event.httpMethod === "POST") {
+ if (event.httpMethod === "POST") {
     try {
       const body = JSON.parse(event.body);
       
       const { data, error } = await supabase.from('mensajes').insert([body]).select();
       
       if (error) {
-        console.error("Error detallado de Supabase:", error); // <-- ESTO ES VITAL
-        return { statusCode: 400, body: JSON.stringify({ error: error.message, detalles: error.details }) };
+        // AQUÍ ESTÁ EL TRUCO: devolvemos el error de Supabase al navegador
+        return { 
+            statusCode: 400, 
+            body: JSON.stringify({ mensaje_error: error.message, detalles: error.details }) 
+        };
       }
 
       return { statusCode: 201, body: JSON.stringify({ ok: true, data: data[0] }) };
     } catch (err) {
-      return { statusCode: 400, body: JSON.stringify({ error: "JSON inválido" }) };
+      return { statusCode: 400, body: JSON.stringify({ error: "Error en el formato JSON" }) };
     }
   }
 };
