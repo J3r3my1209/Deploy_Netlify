@@ -1,148 +1,88 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Formulario Fullstack con Netlify</title>
+  <title>App Fullstack con Supabase</title>
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, sans-serif; background: #ecfeff; color: #0f172a; }
-    header { background: linear-gradient(135deg, #0f766e, #0891b2); color: white; padding: 32px 20px; text-align: center; }
-    main { max-width: 980px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: white; padding: 24px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.12); }
-    label { display: block; margin-top: 12px; font-weight: bold; }
-    input, textarea, button { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; }
-    button { background: #0f766e; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #115e59; }
-    button:disabled { background: #94a3b8; cursor: not-allowed; }
-    .estado { margin-top: 14px; padding: 12px; border-radius: 10px; display: none; }
-    .ok { display:block; background:#dcfce7; color:#166534; }
-    .error { display:block; background:#fee2e2; color:#991b1b; }
-    .mensaje { border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; margin: 12px 0; background: #f8fafc; }
-    .mensaje b { color: #0f766e; }
-    .fecha { color:#64748b; font-size:.85rem; }
-    #btnLimpiar { background: #ef4444; margin-top: 10px; }
-    #btnLimpiar:hover { background: #dc2626; }
-    @media(max-width: 800px) { main { grid-template-columns: 1fr; } }
+    body { font-family: sans-serif; background: #ecfeff; padding: 20px; }
+    .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    input, textarea, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    button { background: #0f766e; color: white; cursor: pointer; }
+    .mensaje { border-bottom: 1px solid #eee; padding: 10px 0; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>App Fullstack con Netlify</h1>
-    <p>Frontend HTML + Backend con Netlify Functions</p>
-  </header>
+  <header><h1>App Fullstack</h1></header>
 
   <main>
     <section class="card">
-      <h2>Enviar mensaje</h2>
       <form id="formMensaje">
-        <label for="nombre">Nombre</label>
-        <input id="nombre" name="nombre" placeholder="Ej. Juan" required />
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" placeholder="correo@ejemplo.com" required />
-        <label for="mensaje">Mensaje</label>
-        <textarea id="mensaje" name="mensaje" rows="5" placeholder="Escribe al menos 10 caracteres..." required></textarea>
-        <small id="contador">Caracteres: 0</small>
+        <input id="nombre" placeholder="Nombre" required />
+        <input id="email" type="email" placeholder="Email" required />
+        <textarea id="mensaje" placeholder="Mensaje (min 10 caracteres)" required></textarea>
         <button id="btnEnviar" type="submit">Enviar al backend</button>
       </form>
-      <div id="estado" class="estado"></div>
+      <div id="estado"></div>
     </section>
 
     <section class="card">
       <h2>Mensajes</h2>
-      <button id="btnCargar">Cargar mensajes demo</button>
-      <button id="btnLimpiar">Limpiar lista</button>
+      <button id="btnCargar">Cargar mensajes</button>
       <div id="listaMensajes"></div>
     </section>
   </main>
 
   <script>
     const form = document.getElementById("formMensaje");
-    const estado = document.getElementById("estado");
-    const listaMensajes = document.getElementById("listaMensajes");
-    const btnEnviar = document.getElementById("btnEnviar");
-    const btnCargar = document.getElementById("btnCargar");
-    const btnLimpiar = document.getElementById("btnLimpiar");
-    const txtMensaje = document.getElementById("mensaje");
-    const contador = document.getElementById("contador");
+    const lista = document.getElementById("listaMensajes");
+    const API_BASE = "/api"; // Asegúrate de tener el netlify.toml configurado
 
-    const API_BASE = "/api";
-
-    function mostrarEstado(texto, tipo) {
-      estado.textContent = texto;
-      estado.className = "estado " + tipo;
-    }
-
+    // Función para renderizar
     function renderMensaje(item) {
       const div = document.createElement("div");
       div.className = "mensaje";
-      div.innerHTML = `
-        <b>${item.nombre}</b> <span>(${item.email})</span>
-        <p>${item.mensaje}</p>
-        <div class="fecha">${new Date(item.fecha).toLocaleString()}</div>
-      `;
-      listaMensajes.prepend(div);
+      div.innerHTML = `<b>${item.nombre}</b>: ${item.mensaje}`;
+      lista.prepend(div);
     }
 
-    txtMensaje.addEventListener("input", () => {
-      const longitud = txtMensaje.value.length;
-      contador.textContent = `Caracteres: ${longitud}`;
-      if (longitud < 10) {
-        contador.style.color = "red";
-        btnEnviar.disabled = true;
-      } else {
-        contador.style.color = "green";
-        btnEnviar.disabled = false;
-      }
-    });
-
-    btnLimpiar.addEventListener("click", () => {
-      listaMensajes.innerHTML = "";
-    });
-
-    async function cargarMensajes() {
-      listaMensajes.innerHTML = "<p>Cargando...</p>";
-      try {
-        const response = await fetch(`${API_BASE}/mensajes`);
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error);
-        listaMensajes.innerHTML = "";
-        result.data.forEach(renderMensaje);
-      } catch (error) {
-        listaMensajes.innerHTML = `<p style="color:red">${error.message}</p>`;
-      }
-    }
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      btnEnviar.disabled = true;
-      btnEnviar.textContent = "Enviando...";
+    // Manejo de envío
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
       const data = {
-        nombre: document.getElementById("nombre").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        mensaje: txtMensaje.value.trim()
+        nombre: document.getElementById("nombre").value,
+        email: document.getElementById("email").value,
+        mensaje: document.getElementById("mensaje").value
       };
+
+      console.log("Datos enviados al servidor:", JSON.stringify(data));
+
       try {
         const response = await fetch(`${API_BASE}/mensajes`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
         });
+        
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error);
-        mostrarEstado(result.message, "ok");
+        if (!response.ok) throw new Error(result.error || "Error al enviar");
+        
+        alert("Mensaje enviado");
         renderMensaje(result.data);
         form.reset();
-        contador.textContent = "Caracteres: 0";
-      } catch (error) {
-        mostrarEstado(error.message, "error");
-      } finally {
-        btnEnviar.disabled = false;
-        btnEnviar.textContent = "Enviar al backend";
+      } catch (err) {
+        console.error("Detalle del error:", err);
+        alert("Error: " + err.message);
       }
     });
 
-    btnCargar.addEventListener("click", cargarMensajes);
+    // Cargar mensajes
+    document.getElementById("btnCargar").addEventListener("click", async () => {
+      const res = await fetch(`${API_BASE}/mensajes`);
+      const resJson = await res.json();
+      lista.innerHTML = "";
+      resJson.data.forEach(renderMensaje);
+    });
   </script>
 </body>
 </html>

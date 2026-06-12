@@ -17,7 +17,6 @@ exports.handler = async function(event, context) {
       const { data, error } = await supabase.from('mensajes').insert([body]).select();
       
       if (error) {
-        // AQUÍ ESTÁ EL TRUCO: devolvemos el error de Supabase al navegador
         return { 
             statusCode: 400, 
             body: JSON.stringify({ mensaje_error: error.message, detalles: error.details }) 
