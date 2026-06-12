@@ -13,14 +13,17 @@ exports.handler = async function(event, context) {
   if (event.httpMethod === "POST") {
     try {
       const body = JSON.parse(event.body);
-      if (!body.nombre || !body.email || !body.mensaje) {
-        return { statusCode: 400, body: JSON.stringify({ error: "Faltan campos obligatorios" }) };
-      }
+      
       const { data, error } = await supabase.from('mensajes').insert([body]).select();
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Error detallado de Supabase:", error); // <-- ESTO ES VITAL
+        return { statusCode: 400, body: JSON.stringify({ error: error.message, detalles: error.details }) };
+      }
+
       return { statusCode: 201, body: JSON.stringify({ ok: true, data: data[0] }) };
     } catch (err) {
-      return { statusCode: 400, body: JSON.stringify({ error: err.message }) };
+      return { statusCode: 400, body: JSON.stringify({ error: "JSON inválido" }) };
     }
   }
 };
