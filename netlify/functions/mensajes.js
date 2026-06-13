@@ -12,20 +12,22 @@ exports.handler = async function(event, context) {
 
  if (event.httpMethod === "POST") {
     try {
-      const body = JSON.parse(event.body);
-      
-      const { data, error } = await supabase.from('mensajes').insert([body]).select();
-      if (error) {
-        console.error("Error de Supabase:", error);
-        return { 
-          statusCode: 400, 
-          body: JSON.stringify({ error: error.message, detalles: error.details }) 
-        };
-      }
-
-      return { statusCode: 201, body: JSON.stringify({ ok: true, data: data[0] }) };
+        console.log("Cuerpo recibido:", event.body); // Log para ver qué llega
+        const body = JSON.parse(event.body);
+        
+        const { data, error } = await supabase.from('mensajes').insert([body]).select();
+        
+        if (error) {
+            console.error("Error de Supabase:", error); // Esto aparecerá en los Logs de Netlify
+            return { 
+                statusCode: 400, 
+                body: JSON.stringify({ mensaje_error: error.message, detalles: error.details }) 
+            };
+        }
+        return { statusCode: 201, body: JSON.stringify({ ok: true, data: data[0] }) };
     } catch (err) {
-      return { statusCode: 400, body: JSON.stringify({ error: "Error en el formato JSON" }) };
+        console.error("Error de parsing:", err);
+        return { statusCode: 400, body: JSON.stringify({ mensaje_error: "Error en el formato JSON", detalles: err.message }) };
     }
-  }
+}
 };
