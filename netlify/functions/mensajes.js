@@ -1,40 +1,33 @@
 const { createClient } = require('@supabase/supabase-js');
-
-// Inicialización estándar sin configuraciones extra que causen conflictos de esquema
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 exports.handler = async (event) => {
-    // Manejo de preflight CORS
     if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS" } };
+        return { statusCode: 200, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS" } };
     }
 
     try {
+        if (event.httpMethod === 'DELETE') {
+            const id = event.queryStringParameters.id;
+            const { error } = await supabase.from('mensajes').delete().eq('id', id);
+            if (error) throw error;
+            return { statusCode: 200, body: JSON.stringify({ ok: true }) };
+        }
+
         if (event.httpMethod === 'POST') {
             const body = JSON.parse(event.body);
-            
-            // Usamos una referencia a la tabla sin prefijos de esquema
-            // Si esto sigue fallando, es un problema de caché en Supabase
-            const { data, error } = await supabase
-                .from('mensajes')
-                .insert([body]);
-
-            if (error) {
-                console.error("ERROR DE SUPABASE:", error);
-                return { 
-                    statusCode: 400, 
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ error: error.message, code: error.code }) 
-                };
-            }
-            return { 
-                statusCode: 201, 
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ok: true }) 
-            };
+            const { data, error } = await supabase.from('mensajes').insert([body]).select();
+            if (error) throw error;
+            return { statusCode: 201, body: JSON.stringify({ ok: true, data: data[0] }) };
         }
-        return { statusCode: 405, body: "Método no permitido" };
+
+        if (event.httpMethod === 'GET') {
+            const { data, error } = await supabase.from('mensajes').select('*').order('id', { ascending: false });
+            if (error) throw error;
+            return { statusCode: 200, body: JSON.stringify({ data }) };
+        }
+
     } catch (err) {
-        return { statusCode: 500, body: JSON.stringify({ error: err.toString() }) };
+        return { statusCode: 400, body: JSON.stringify({ error: err.message }) };
     }
 };

@@ -13,8 +13,8 @@
     input, textarea, button { width: 100%; margin: 10px 0; padding: 12px; border: 1px solid #ced4da; border-radius: 6px; box-sizing: border-box; }
     button { background: #0b666a; color: white; font-weight: bold; cursor: pointer; border: none; }
     button:hover { background: #084f52; }
-    .mensaje { padding: 12px; border-bottom: 1px solid #e9ecef; }
-    .mensaje b { color: #0b666a; }
+    .mensaje { padding: 12px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
+    .btn-borrar { background: #dc3545; width: auto; padding: 5px 10px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -37,18 +37,18 @@
 
     <section class="card">
       <h2>Mensajes</h2>
-      <button id="btnCargar">Cargar mensajes demo</button>
+      <button id="btnCargar">Cargar mensajes</button>
       <div id="listaMensajes"></div>
     </section>
   </main>
 
   <script>
-    // TU LÓGICA FUNCIONAL SE MANTIENE EXACTA
     const form = document.getElementById("formMensaje");
     const lista = document.getElementById("listaMensajes");
     const btnEnviar = document.getElementById("btnEnviar");
     const API_BASE = "/.netlify/functions";
 
+    // 1. Lógica para enviar mensaje (POST)
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       btnEnviar.disabled = true;
@@ -64,36 +64,46 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
         });
-        const text = await response.text();
-        let result;
-        try { result = JSON.parse(text); } catch(e) { throw new Error(text); }
-        if (!response.ok) throw new Error(result.error || "Error desconocido");
+        if (!response.ok) throw new Error("Error al enviar");
         alert("¡Enviado con éxito!");
         form.reset();
-      } catch (err) {
-        alert("Error: " + err.message);
-      } finally {
-        btnEnviar.disabled = false;
-        btnEnviar.textContent = "Enviar al backend";
-      }
+      } catch (err) { alert("Error: " + err.message); }
+      finally { btnEnviar.disabled = false; btnEnviar.textContent = "Enviar al backend"; }
     });
 
-    document.getElementById("btnCargar").addEventListener("click", async () => {
+    // 2. Lógica para cargar mensajes (GET)
+    document.getElementById("btnCargar").addEventListener("click", cargarMensajes);
+
+    async function cargarMensajes() {
       try {
         const response = await fetch(`${API_BASE}/mensajes`);
         const resJson = await response.json();
-        if (!response.ok) throw new Error(resJson.error || "Error al cargar");
         lista.innerHTML = "";
         resJson.data.forEach(item => {
           const div = document.createElement("div");
           div.className = "mensaje";
-          div.innerHTML = `<b>${item.nombre}</b>: ${item.mensaje}`;
+          div.innerHTML = `
+            <div><b>${item.nombre}</b>: ${item.mensaje}</div>
+            <button class="btn-borrar" onclick="borrarMensaje(${item.id})">Borrar</button>
+          `;
           lista.appendChild(div);
         });
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    });
+      } catch (err) { alert("Error al cargar: " + err.message); }
+    }
+
+    // 3. Lógica para borrar mensaje (DELETE)
+    async function borrarMensaje(id) {
+      if (!confirm("¿Borrar este mensaje?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/mensajes?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          alert("Mensaje borrado");
+          cargarMensajes(); // Refresca la lista automáticamente
+        } else {
+          alert("Error al borrar");
+        }
+      } catch (err) { alert("Error: " + err.message); }
+    }
   </script>
 </body>
 </html>
