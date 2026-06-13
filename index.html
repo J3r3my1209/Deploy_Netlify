@@ -36,7 +36,7 @@
   <script>
     const form = document.getElementById("formMensaje");
     const lista = document.getElementById("listaMensajes");
-    const API_BASE = "/api"; // Asegúrate de tener el netlify.toml configurado
+    const API_BASE = "/.netlify/functions";
 
     // Función para renderizar
     function renderMensaje(item) {
@@ -78,7 +78,7 @@
 
     // Cargar mensajes
     document.getElementById("btnCargar").addEventListener("click", async () => {
-      const res = await fetch(`${API_BASE}/mensajes`);
+      const response = await fetch(`${API_BASE}/mensajes`, { ... });
       const resJson = await res.json();
       lista.innerHTML = "";
       resJson.data.forEach(renderMensaje);
