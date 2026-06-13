@@ -15,11 +15,11 @@ exports.handler = async function(event, context) {
       const body = JSON.parse(event.body);
       
       const { data, error } = await supabase.from('mensajes').insert([body]).select();
-      
       if (error) {
+        console.error("Error de Supabase:", error);
         return { 
-            statusCode: 400, 
-            body: JSON.stringify({ mensaje_error: error.message, detalles: error.details }) 
+          statusCode: 400, 
+          body: JSON.stringify({ error: error.message, detalles: error.details }) 
         };
       }
 
