@@ -29,7 +29,7 @@ exports.handler = async (event) => {
       const body = JSON.parse(event.body);
       
       const { data, error } = await supabase
-        .from('mensajes')
+        .from('public.mensajes')
         .insert([body])
         .select();
 
@@ -45,7 +45,7 @@ exports.handler = async (event) => {
     // 4. Manejo de GET (Leer)
     if (event.httpMethod === 'GET') {
       const { data, error } = await supabase
-        .from('mensajes')
+        .from('public.mensajes')
         .select('*')
         .order('id', { ascending: false });
 
