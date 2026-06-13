@@ -2,25 +2,31 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>App Fullstack</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App Fullstack con Supabase</title>
 </head>
 <body>
   <form id="formMensaje">
     <input id="nombre" placeholder="Nombre" required />
     <input id="email" type="email" placeholder="Email" required />
     <textarea id="mensaje" placeholder="Mensaje" required></textarea>
-    <button type="submit">Enviar</button>
+    <button type="submit" id="btnEnviar">Enviar</button>
   </form>
+  
   <button id="btnCargar">Cargar mensajes</button>
   <div id="listaMensajes"></div>
 
   <script>
     const form = document.getElementById("formMensaje");
     const lista = document.getElementById("listaMensajes");
+    const btnEnviar = document.getElementById("btnEnviar");
     const API_BASE = "/.netlify/functions";
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      btnEnviar.disabled = true;
+      btnEnviar.textContent = "Enviando...";
+
       const data = {
         nombre: document.getElementById("nombre").value,
         email: document.getElementById("email").value,
@@ -33,13 +39,22 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
         });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error);
         
-        alert("¡Enviado!");
-        location.reload(); 
+        const result = await response.json();
+        
+        if (!response.ok) {
+          // Lanzamos el error específico del servidor o uno genérico
+          throw new Error(result.error || result.mensaje_error || "Error desconocido");
+        }
+        
+        alert("¡Mensaje guardado con éxito!");
+        form.reset();
       } catch (err) {
-        alert("Error: " + err.message);
+        console.error("Detalle del error:", err);
+        alert("Error al enviar: " + err.message);
+      } finally {
+        btnEnviar.disabled = false;
+        btnEnviar.textContent = "Enviar";
       }
     });
 
@@ -47,12 +62,18 @@
       try {
         const response = await fetch(`${API_BASE}/mensajes`);
         const resJson = await response.json();
+        
+        if (!response.ok) throw new Error(resJson.error || "No se pudieron cargar los mensajes");
+        
         lista.innerHTML = "";
-        resJson.data.forEach(item => {
-          const div = document.createElement("div");
-          div.innerHTML = `<b>${item.nombre}</b>: ${item.mensaje}`;
-          lista.appendChild(div);
-        });
+        // Verificamos que resJson.data exista y sea un array
+        if (Array.isArray(resJson.data)) {
+          resJson.data.forEach(item => {
+            const div = document.createElement("div");
+            div.innerHTML = `<b>${item.nombre}</b>: ${item.mensaje}`;
+            lista.appendChild(div);
+          });
+        }
       } catch (err) {
         alert("Error al cargar: " + err.message);
       }
