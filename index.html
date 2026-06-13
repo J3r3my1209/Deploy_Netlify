@@ -48,16 +48,27 @@
     const btnEnviar = document.getElementById("btnEnviar");
     const API_BASE = "/.netlify/functions";
 
-    // 1. Lógica para enviar mensaje (POST)
+    // 1. Lógica para enviar mensaje con validación
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      
+      const mensaje = document.getElementById("mensaje").value;
+      
+      // Validación de longitud
+      if (mensaje.length < 5 || mensaje.length > 200) {
+        alert("El mensaje debe tener entre 5 y 200 caracteres.");
+        return;
+      }
+
       btnEnviar.disabled = true;
       btnEnviar.textContent = "Enviando...";
+      
       const data = {
         nombre: document.getElementById("nombre").value,
         email: document.getElementById("email").value,
-        mensaje: document.getElementById("mensaje").value
+        mensaje: mensaje
       };
+      
       try {
         const response = await fetch(`${API_BASE}/mensajes`, {
           method: "POST",
@@ -67,11 +78,12 @@
         if (!response.ok) throw new Error("Error al enviar");
         alert("¡Enviado con éxito!");
         form.reset();
+        cargarMensajes(); // Actualiza la lista al enviar
       } catch (err) { alert("Error: " + err.message); }
       finally { btnEnviar.disabled = false; btnEnviar.textContent = "Enviar al backend"; }
     });
 
-    // 2. Lógica para cargar mensajes (GET)
+    // 2. Lógica para cargar mensajes
     document.getElementById("btnCargar").addEventListener("click", cargarMensajes);
 
     async function cargarMensajes() {
@@ -91,14 +103,14 @@
       } catch (err) { alert("Error al cargar: " + err.message); }
     }
 
-    // 3. Lógica para borrar mensaje (DELETE)
+    // 3. Lógica para borrar mensaje
     async function borrarMensaje(id) {
       if (!confirm("¿Borrar este mensaje?")) return;
       try {
         const res = await fetch(`${API_BASE}/mensajes?id=${id}`, { method: 'DELETE' });
         if (res.ok) {
           alert("Mensaje borrado");
-          cargarMensajes(); // Refresca la lista automáticamente
+          cargarMensajes();
         } else {
           alert("Error al borrar");
         }
