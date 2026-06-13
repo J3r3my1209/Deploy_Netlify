@@ -4,17 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App Fullstack con Supabase</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input, textarea, button { width: 100%; margin: 8px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    button { background: #007bff; color: white; cursor: pointer; }
+    .mensaje { padding: 10px; border-bottom: 1px solid #eee; }
+  </style>
 </head>
 <body>
-  <form id="formMensaje">
-    <input id="nombre" placeholder="Nombre" required />
-    <input id="email" type="email" placeholder="Email" required />
-    <textarea id="mensaje" placeholder="Mensaje" required></textarea>
-    <button type="submit" id="btnEnviar">Enviar</button>
-  </form>
-  
-  <button id="btnCargar">Cargar mensajes</button>
-  <div id="listaMensajes"></div>
+
+  <main>
+    <section class="card">
+      <form id="formMensaje">
+        <input id="nombre" placeholder="Nombre" required />
+        <input id="email" type="email" placeholder="Email" required />
+        <textarea id="mensaje" placeholder="Mensaje" required></textarea>
+        <button type="submit" id="btnEnviar">Enviar mensaje</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <button id="btnCargar">Cargar mensajes</button>
+      <div id="listaMensajes"></div>
+    </section>
+  </main>
 
   <script>
     const form = document.getElementById("formMensaje");
@@ -22,6 +36,7 @@
     const btnEnviar = document.getElementById("btnEnviar");
     const API_BASE = "/.netlify/functions";
 
+    // Manejo de envío
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       btnEnviar.disabled = true;
@@ -39,43 +54,41 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
         });
-        
-        const result = await response.json();
-        
-        if (!response.ok) {
-          // Lanzamos el error específico del servidor o uno genérico
-          throw new Error(result.error || result.mensaje_error || "Error desconocido");
-        }
-        
-        alert("¡Mensaje guardado con éxito!");
+
+        // Leemos la respuesta como texto primero para diagnosticar
+        const text = await response.text();
+        let result;
+        try { result = JSON.parse(text); } catch(e) { throw new Error(text); }
+
+        if (!response.ok) throw new Error(result.error || "Error desconocido");
+
+        alert("¡Enviado con éxito!");
         form.reset();
       } catch (err) {
-        console.error("Detalle del error:", err);
-        alert("Error al enviar: " + err.message);
+        console.error("DEBUG:", err);
+        alert("Error: " + err.message);
       } finally {
         btnEnviar.disabled = false;
-        btnEnviar.textContent = "Enviar";
+        btnEnviar.textContent = "Enviar mensaje";
       }
     });
 
+    // Cargar mensajes
     document.getElementById("btnCargar").addEventListener("click", async () => {
       try {
         const response = await fetch(`${API_BASE}/mensajes`);
         const resJson = await response.json();
-        
-        if (!response.ok) throw new Error(resJson.error || "No se pudieron cargar los mensajes");
+        if (!response.ok) throw new Error(resJson.error || "Error al cargar");
         
         lista.innerHTML = "";
-        // Verificamos que resJson.data exista y sea un array
-        if (Array.isArray(resJson.data)) {
-          resJson.data.forEach(item => {
-            const div = document.createElement("div");
-            div.innerHTML = `<b>${item.nombre}</b>: ${item.mensaje}`;
-            lista.appendChild(div);
-          });
-        }
+        resJson.data.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "mensaje";
+          div.innerHTML = `<b>${item.nombre}</b>: ${item.mensaje}`;
+          lista.appendChild(div);
+        });
       } catch (err) {
-        alert("Error al cargar: " + err.message);
+        alert("Error: " + err.message);
       }
     });
   </script>
