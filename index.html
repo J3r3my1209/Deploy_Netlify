@@ -2,51 +2,23 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>App Fullstack con Supabase</title>
-  <style>
-    body { font-family: sans-serif; background: #ecfeff; padding: 20px; }
-    .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    input, textarea, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
-    button { background: #0f766e; color: white; cursor: pointer; }
-    .mensaje { border-bottom: 1px solid #eee; padding: 10px 0; }
-  </style>
+  <title>App Fullstack</title>
 </head>
 <body>
-  <header><h1>App Fullstack</h1></header>
-
-  <main>
-    <section class="card">
-      <form id="formMensaje">
-        <input id="nombre" placeholder="Nombre" required />
-        <input id="email" type="email" placeholder="Email" required />
-        <textarea id="mensaje" placeholder="Mensaje (min 10 caracteres)" required></textarea>
-        <button id="btnEnviar" type="submit">Enviar al backend</button>
-      </form>
-      <div id="estado"></div>
-    </section>
-
-    <section class="card">
-      <h2>Mensajes</h2>
-      <button id="btnCargar">Cargar mensajes</button>
-      <div id="listaMensajes"></div>
-    </section>
-  </main>
+  <form id="formMensaje">
+    <input id="nombre" placeholder="Nombre" required />
+    <input id="email" type="email" placeholder="Email" required />
+    <textarea id="mensaje" placeholder="Mensaje" required></textarea>
+    <button type="submit">Enviar</button>
+  </form>
+  <button id="btnCargar">Cargar mensajes</button>
+  <div id="listaMensajes"></div>
 
   <script>
     const form = document.getElementById("formMensaje");
     const lista = document.getElementById("listaMensajes");
     const API_BASE = "/.netlify/functions";
 
-    // Función para renderizar
-    function renderMensaje(item) {
-      const div = document.createElement("div");
-      div.className = "mensaje";
-      div.innerHTML = `<b>${item.nombre}</b>: ${item.mensaje}`;
-      lista.prepend(div);
-    }
-
-    // Manejo de envío
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = {
@@ -55,23 +27,18 @@
         mensaje: document.getElementById("mensaje").value
       };
 
-      console.log("Datos enviados al servidor:", JSON.stringify(data));
-
       try {
         const response = await fetch(`${API_BASE}/mensajes`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)
         });
-        
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Error al enviar");
+        if (!response.ok) throw new Error(result.error);
         
-        alert("Mensaje enviado");
-        renderMensaje(result.data);
-        form.reset();
+        alert("¡Enviado!");
+        location.reload(); 
       } catch (err) {
-        console.error("Detalle del error:", err);
         alert("Error: " + err.message);
       }
     });
@@ -80,11 +47,12 @@
       try {
         const response = await fetch(`${API_BASE}/mensajes`);
         const resJson = await response.json();
-        
-        if (!response.ok) throw new Error(resJson.error || "Error al cargar");
-        
         lista.innerHTML = "";
-        resJson.data.forEach(renderMensaje);
+        resJson.data.forEach(item => {
+          const div = document.createElement("div");
+          div.innerHTML = `<b>${item.nombre}</b>: ${item.mensaje}`;
+          lista.appendChild(div);
+        });
       } catch (err) {
         alert("Error al cargar: " + err.message);
       }
