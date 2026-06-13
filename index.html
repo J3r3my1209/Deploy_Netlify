@@ -76,12 +76,18 @@
       }
     });
 
-    // Cargar mensajes
     document.getElementById("btnCargar").addEventListener("click", async () => {
-      const response = await fetch(`${API_BASE}/mensajes`, { ... });
-      const resJson = await res.json();
-      lista.innerHTML = "";
-      resJson.data.forEach(renderMensaje);
+      try {
+        const response = await fetch(`${API_BASE}/mensajes`);
+        const resJson = await response.json();
+        
+        if (!response.ok) throw new Error(resJson.error || "Error al cargar");
+        
+        lista.innerHTML = "";
+        resJson.data.forEach(renderMensaje);
+      } catch (err) {
+        alert("Error al cargar: " + err.message);
+      }
     });
   </script>
 </body>
