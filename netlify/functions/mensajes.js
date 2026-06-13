@@ -2,31 +2,27 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-exports.handler = async (event, context) => {
-  // Manejo de CORS
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' } };
-  }
-
-  try {
-    // Lógica para POST
-    if (event.httpMethod === 'POST') {
-      const body = JSON.parse(event.body);
-      const { data, error } = await supabase.from('mensajes').insert([body]).select();
-      if (error) throw error;
-      return { statusCode: 201, body: JSON.stringify({ ok: true, data: data[0] }) };
+exports.handler = async (event) => {
+    // 1. Verificación básica: ¿Llegó algo?
+    if (!event.body) {
+        return { statusCode: 400, body: JSON.stringify({ error: "Cuerpo de la petición vacío" }) };
     }
 
-    // Lógica para GET
-    if (event.httpMethod === 'GET') {
-      const { data, error } = await supabase.from('mensajes').select('*');
-      if (error) throw error;
-      return { statusCode: 200, body: JSON.stringify({ ok: true, data }) };
+    try {
+        const body = JSON.parse(event.body);
+        
+        // 2. Intentar insertar en Supabase
+        const { data, error } = await supabase
+            .from('mensajes')
+            .insert([body]);
+
+        if (error) {
+            // Esto nos dirá SI ES UN PROBLEMA DE RLS O DE BASE DE DATOS
+            return { statusCode: 400, body: JSON.stringify({ error: error.message }) };
+        }
+
+        return { statusCode: 200, body: JSON.stringify({ mensaje: "Guardado" }) };
+    } catch (e) {
+        return { statusCode: 500, body: JSON.stringify({ error: e.toString() }) };
     }
-  } catch (err) {
-    return { 
-      statusCode: 400, 
-      body: JSON.stringify({ error: err.message || "Error desconocido en el servidor" }) 
-    };
-  }
 };
