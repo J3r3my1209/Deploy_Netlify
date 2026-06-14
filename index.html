@@ -15,7 +15,7 @@
     button:hover { background: #084f52; }
     .mensaje { padding: 12px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
     .btn-borrar { background: #dc3545; width: auto; padding: 5px 10px; font-size: 12px; }
-    #contador { font-size: 0.85em; color: #666; margin-top: -5px; margin-bottom: 10px; display: block; }
+    #contador { font-size: 0.85em; color: #666; margin-top: -5px; margin-bottom: 10px; display: block; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -56,7 +56,12 @@
     mensajeInput.addEventListener("input", () => {
       const longitud = mensajeInput.value.length;
       contador.textContent = `Caracteres: ${longitud} / 200`;
-      contador.style.color = (longitud > 200 || longitud < 5) ? "#dc3545" : "#666";
+      
+      if (longitud < 10 || longitud > 200) {
+        contador.style.color = "#dc3545";
+      } else {
+        contador.style.color = "#0b666a"; // Verde oscuro si es correcto
+      }
     });
 
     // 2. Lógica para enviar mensaje
@@ -64,8 +69,8 @@
       e.preventDefault();
       const mensaje = mensajeInput.value;
       
-      if (mensaje.length < 5 || mensaje.length > 200) {
-        alert("El mensaje debe tener entre 5 y 200 caracteres.");
+      if (mensaje.length < 10 || mensaje.length > 200) {
+        alert("El mensaje debe tener entre 10 y 200 caracteres.");
         return;
       }
 
@@ -87,7 +92,8 @@
         if (!response.ok) throw new Error("Error al enviar");
         alert("¡Enviado con éxito!");
         form.reset();
-        contador.textContent = "Caracteres: 0 / 200"; // Resetear contador
+        contador.textContent = "Caracteres: 0 / 200";
+        contador.style.color = "#666";
         cargarMensajes();
       } catch (err) { alert("Error: " + err.message); }
       finally { btnEnviar.disabled = false; btnEnviar.textContent = "Enviar al backend"; }
