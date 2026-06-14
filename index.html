@@ -15,6 +15,7 @@
     button:hover { background: #084f52; }
     .mensaje { padding: 12px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
     .btn-borrar { background: #dc3545; width: auto; padding: 5px 10px; font-size: 12px; }
+    #contador { font-size: 0.85em; color: #666; margin-top: -5px; margin-bottom: 10px; display: block; }
   </style>
 </head>
 <body>
@@ -31,6 +32,7 @@
         <input id="nombre" placeholder="Nombre" required />
         <input id="email" type="email" placeholder="Email" required />
         <textarea id="mensaje" placeholder="Escribe un mensaje..." required></textarea>
+        <small id="contador">Caracteres: 0 / 200</small>
         <button type="submit" id="btnEnviar">Enviar al backend</button>
       </form>
     </section>
@@ -46,15 +48,22 @@
     const form = document.getElementById("formMensaje");
     const lista = document.getElementById("listaMensajes");
     const btnEnviar = document.getElementById("btnEnviar");
+    const mensajeInput = document.getElementById("mensaje");
+    const contador = document.getElementById("contador");
     const API_BASE = "/.netlify/functions";
 
-    // 1. Lógica para enviar mensaje con validación
+    // 1. Contador de caracteres en tiempo real
+    mensajeInput.addEventListener("input", () => {
+      const longitud = mensajeInput.value.length;
+      contador.textContent = `Caracteres: ${longitud} / 200`;
+      contador.style.color = (longitud > 200 || longitud < 5) ? "#dc3545" : "#666";
+    });
+
+    // 2. Lógica para enviar mensaje
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const mensaje = mensajeInput.value;
       
-      const mensaje = document.getElementById("mensaje").value;
-      
-      // Validación de longitud
       if (mensaje.length < 5 || mensaje.length > 200) {
         alert("El mensaje debe tener entre 5 y 200 caracteres.");
         return;
@@ -78,12 +87,13 @@
         if (!response.ok) throw new Error("Error al enviar");
         alert("¡Enviado con éxito!");
         form.reset();
-        cargarMensajes(); // Actualiza la lista al enviar
+        contador.textContent = "Caracteres: 0 / 200"; // Resetear contador
+        cargarMensajes();
       } catch (err) { alert("Error: " + err.message); }
       finally { btnEnviar.disabled = false; btnEnviar.textContent = "Enviar al backend"; }
     });
 
-    // 2. Lógica para cargar mensajes
+    // 3. Lógica para cargar mensajes
     document.getElementById("btnCargar").addEventListener("click", cargarMensajes);
 
     async function cargarMensajes() {
@@ -103,7 +113,7 @@
       } catch (err) { alert("Error al cargar: " + err.message); }
     }
 
-    // 3. Lógica para borrar mensaje
+    // 4. Lógica para borrar mensaje
     async function borrarMensaje(id) {
       if (!confirm("¿Borrar este mensaje?")) return;
       try {
